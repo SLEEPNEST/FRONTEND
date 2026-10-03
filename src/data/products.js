@@ -97,6 +97,7 @@ export const bedsheets = [
     badge: 'New Arrival',
     sizes: ['Queen', 'King'],
     images: [
+      '/videos/bedsheet_video.mp4',
       '/images/generated/sleepnest_bedsheet.jpg',
     ],
     inStock: true,
@@ -114,6 +115,7 @@ export const bedsheets = [
     badge: 'Bestseller',
     sizes: ['Queen', 'King'],
     images: [
+      '/videos/bedsheet_video.mp4',
       '/images/generated/sleepnest_bedsheet.jpg',
     ],
     inStock: true,
@@ -131,6 +133,7 @@ export const bedsheets = [
     badge: 'Eco Soft',
     sizes: ['Queen', 'King'],
     images: [
+      '/videos/bedsheet_video.mp4',
       '/images/generated/sleepnest_bedsheet.jpg',
     ],
     inStock: true,
@@ -151,6 +154,7 @@ export const protectors = [
     badge: '100% Waterproof',
     sizes: ['Single', 'Double', 'Queen', 'King'],
     images: [
+      '/videos/protector_video.mp4',
       '/images/generated/sleepnest_mattress_protector.jpg',
     ],
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-making-a-bed-with-white-sheets-41585-large.mp4',
@@ -172,6 +176,7 @@ export const protectors = [
     badge: 'Cooling Tech',
     sizes: ['Single', 'Double', 'Queen', 'King'],
     images: [
+      '/videos/protector_video.mp4',
       '/images/generated/sleepnest_mattress_protector.jpg',
     ],
     inStock: true,
@@ -189,6 +194,7 @@ export const protectors = [
     badge: 'Extra Plush',
     sizes: ['Double', 'Queen', 'King'],
     images: [
+      '/videos/protector_video.mp4',
       '/images/generated/sleepnest_mattress_protector.jpg',
     ],
     inStock: true,
@@ -206,6 +212,7 @@ export const protectors = [
     badge: '360° Protection',
     sizes: ['Queen', 'King'],
     images: [
+      '/videos/protector_video.mp4',
       '/images/generated/sleepnest_mattress_protector.jpg',
     ],
     inStock: true,
@@ -226,6 +233,7 @@ export const comforters = [
     badge: 'Cloud Soft',
     sizes: ['Single', 'Queen/King'],
     images: [
+      '/videos/comforter_video.mp4',
       '/images/generated/sleepnest_comforter.jpg',
     ],
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-comfort-of-a-clean-and-cozy-bed-41584-large.mp4',
@@ -250,6 +258,7 @@ export const pillows = [
     badge: 'Doctor Recommended',
     sizes: ['Standard', 'King'],
     images: [
+      '/videos/pillow_video.mp4',
       '/images/generated/sleepnest_pillow.jpg',
     ],
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-comfort-of-a-clean-and-cozy-bed-41584-large.mp4',

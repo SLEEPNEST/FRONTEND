@@ -1,7 +1,7 @@
 // Account Page
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Package, Heart, MapPin, CreditCard, LogOut, ChevronRight, Eye, EyeOff, Lock } from 'lucide-react';
+import { User, Package, Heart, MapPin, CreditCard, LogOut, ChevronRight, Eye, EyeOff, Lock, ShoppingCart, Grid, Store, ShieldCheck, Video, Percent, Home, BookOpen, Phone, FileText, MessageCircle, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './AccountPage.css';
 
@@ -38,86 +38,191 @@ export default function AccountPage() {
       <div className="account-page">
         <div className="container">
           <div className="account-layout">
-            {/* Sidebar */}
-            <aside className="account-sidebar">
-              <div className="account-profile">
-                <div className="account-avatar">
-                  {user.name?.charAt(0).toUpperCase() || 'U'}
+            {/* Sidebar matching screenshot */}
+            <aside className="account-sidebar-new">
+              <div className="as-header">
+                <div className="as-user-info">
+                  <div className="as-avatar">
+                    <User size={24} />
+                  </div>
+                  <div className="as-details">
+                    <h3 className="as-name">{user.name || 'AKASH AN...'}</h3>
+                    <Link to="/profile" className="as-profile-link">My Profile</Link>
+                  </div>
                 </div>
-                <div>
-                  <p className="account-name">{user.name}</p>
-                  <p className="account-email">{user.email}</p>
+                <div className="as-location">
+                  <MapPin size={16} />
+                  <span>Tiruvannamalai<br/>632326 <span style={{fontSize:10}}>✏️</span></span>
                 </div>
               </div>
-              <nav className="account-nav">
-                {accountMenu.map(({ id, label, Icon, path }) => (
-                  path ? (
-                    <Link key={id} to={path} className="account-nav-item">
-                      <Icon size={18} />
-                      <span>{label}</span>
-                      <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
-                    </Link>
-                  ) : (
-                    <button
-                      key={id}
-                      className={`account-nav-item ${activeTab === id ? 'active' : ''}`}
-                      onClick={() => setActiveTab(id)}
-                    >
-                      <Icon size={18} />
-                      <span>{label}</span>
-                      <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
-                    </button>
-                  )
-                ))}
-                <button className="account-nav-item account-logout" onClick={handleLogout}>
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </nav>
+
+              <div className="as-quick-links">
+                <Link to="/cart" className="as-quick-box">
+                  <ShoppingCart size={20} className="q-icon" />
+                  <span>My Cart</span>
+                </Link>
+                <Link to="/my-orders" className="as-quick-box active">
+                  <Package size={20} className="q-icon" />
+                  <span>My Orders</span>
+                </Link>
+                <div className="as-quick-box">
+                  <CreditCard size={20} className="q-icon" />
+                  <span>Wallet</span>
+                </div>
+              </div>
+
+              <div className="as-nav-list">
+                <Link to="/" className="as-nav-item">
+                  <Grid size={18} className="n-icon" /> <span>Browse Categories</span>
+                </Link>
+                <Link to="/stores" className="as-nav-item">
+                  <Store size={18} className="n-icon" /> <span>Nearby Stores</span>
+                </Link>
+                <div className="as-nav-item">
+                  <ShieldCheck size={18} className="n-icon" /> <span>Zense - AI Sleep Solutions</span> <span className="n-badge-red">New</span> <ChevronDown size={16} className="n-caret"/>
+                </div>
+                <div className="as-nav-item">
+                  <Video size={18} className="n-icon text-red" /> <span>Live Shop</span>
+                </div>
+                <div className="as-nav-item">
+                  <Percent size={18} className="n-icon text-orange" /> <span>Offers</span>
+                </div>
+
+                <div className="as-nav-divider"></div>
+
+                <Link to="/wishlist" className="as-nav-item">
+                  <Heart size={18} className="n-icon" /> <span>Wishlist</span>
+                </Link>
+                <div className="as-nav-item">
+                  <Home size={18} className="n-icon" /> <span>Wall Makeover</span>
+                </div>
+                <div className="as-nav-item">
+                  <BookOpen size={18} className="n-icon" /> <span>Blog</span>
+                </div>
+                <div className="as-nav-item">
+                  <Phone size={18} className="n-icon" /> <span>Contact Us</span>
+                </div>
+                <div className="as-nav-item">
+                  <FileText size={18} className="n-icon" /> <span>FAQs</span>
+                </div>
+                <div className="as-nav-item">
+                  <MessageCircle size={18} className="n-icon" /> <span>Feedback</span>
+                </div>
+              </div>
+
+              <button className="as-logout-btn" onClick={handleLogout}>
+                Logout
+              </button>
             </aside>
 
             {/* Content */}
-            <div className="account-content">
-              {activeTab === 'orders' && (
-                <div className="account-section">
-                  <h2 className="account-section-title">My Orders</h2>
-                  <div className="orders-empty">
-                    <Package size={48} strokeWidth={1} style={{ color: 'var(--gray-200)' }} />
-                    <h3>No orders yet</h3>
-                    <p>Your orders will appear here after you make a purchase.</p>
-                    <Link to="/" className="btn btn-primary">Start Shopping <ChevronRight size={16} /></Link>
+            <div className="account-content-new">
+              {/* Breadcrumbs */}
+              <div className="orders-breadcrumbs">
+                <Link to="/">Home</Link> <ChevronRight size={14}/> <Link to="/account">My Account</Link> <ChevronRight size={14}/> <span>My Orders</span>
+              </div>
+              
+              {/* Filter Row */}
+              <div className="orders-filter-row">
+                <div className="orders-tabs">
+                  <button className="orders-tab-pill active">All</button>
+                  <button className="orders-tab-pill">In Progress</button>
+                  <button className="orders-tab-pill">Delivered</button>
+                  <button className="orders-tab-pill">Cancelled</button>
+                </div>
+                <div className="orders-date-select">
+                  <span>Select date range</span> <ChevronDown size={16}/>
+                </div>
+              </div>
+              
+              {/* Order List */}
+              <div className="orders-list-new">
+                
+                {/* Order 1 */}
+                <div className="order-card-new">
+                  <div className="order-card-top">
+                    <div className="order-status-pill in-progress">
+                      <span className="dot"></span> In progress
+                    </div>
+                    <span className="order-pipe">|</span>
+                    <span className="order-date-new">10 May 2021</span>
+                  </div>
+                  <div className="order-card-main">
+                    <div className="oc-img-col">
+                      <div className="oc-img-wrapper">
+                        <img src="/images/generated/sleepnest_mattress_card.jpg" alt="Mattress" />
+                        <div className="oc-img-overlay">+4</div>
+                      </div>
+                    </div>
+                    <div className="oc-info-col">
+                      <div className="oc-id">Order ID: ABC-6457325</div>
+                      <div className="oc-desc">SleepNest Ortho Mattress | Cloud Pillows | Waterproof Protector & 2 more items</div>
+                      <div className="oc-price">₹ 12,500</div>
+                    </div>
+                    <div className="oc-arrow-col">
+                      <ChevronRight size={24} color="#8c2b2b"/>
+                    </div>
                   </div>
                 </div>
-              )}
-              {activeTab === 'addresses' && (
-                <div className="account-section">
-                  <h2 className="account-section-title">My Addresses</h2>
-                  <div className="orders-empty">
-                    <MapPin size={48} strokeWidth={1} style={{ color: 'var(--gray-200)' }} />
-                    <h3>No addresses saved</h3>
-                    <p>Add delivery addresses for faster checkout.</p>
-                    <button className="btn btn-primary">+ Add Address</button>
+
+                {/* Order 2 */}
+                <div className="order-card-new">
+                  <div className="order-card-top">
+                    <div className="order-status-pill delivered">
+                      <span className="dot"></span> Delivered
+                    </div>
+                    <span className="order-pipe">|</span>
+                    <span className="order-date-new">10 May 2021</span>
+                  </div>
+                  <div className="order-card-main">
+                    <div className="oc-img-col">
+                      <div className="oc-img-wrapper">
+                        <img src="/images/generated/sleepnest_bedsheet.jpg" alt="Bedsheet" />
+                      </div>
+                    </div>
+                    <div className="oc-info-col">
+                      <div className="oc-id">Order ID: ABC-6457325</div>
+                      <div className="oc-desc">Premium Cotton Bedsheet (Queen Size)</div>
+                      <div className="oc-price">₹ 2,499</div>
+                    </div>
+                    <div className="oc-arrow-col">
+                      <ChevronRight size={24} color="#8c2b2b"/>
+                    </div>
                   </div>
                 </div>
-              )}
-              {activeTab === 'payments' && (
-                <div className="account-section">
-                  <h2 className="account-section-title">Payment Methods</h2>
-                  <div className="orders-empty">
-                    <CreditCard size={48} strokeWidth={1} style={{ color: 'var(--gray-200)' }} />
-                    <h3>No saved cards</h3>
-                    <p>Save your card for faster payments next time.</p>
-                    <button className="btn btn-primary">+ Add Card</button>
+
+                {/* Order 3 */}
+                <div className="order-card-new">
+                  <div className="order-card-top">
+                    <div className="order-status-pill delivered">
+                      <span className="dot"></span> Delivered
+                    </div>
+                    <span className="order-pipe">|</span>
+                    <span className="order-date-new">10 May 2021</span>
+                  </div>
+                  <div className="order-card-main">
+                    <div className="oc-img-col">
+                      <div className="oc-img-wrapper">
+                        <img src="/images/generated/sleepnest_pillow.jpg" alt="Pillow" />
+                      </div>
+                    </div>
+                    <div className="oc-info-col">
+                      <div className="oc-id">Order ID: ABC-6457325</div>
+                      <div className="oc-desc">Memory Foam Contour Pillow</div>
+                      <div className="oc-price">₹ 1,899</div>
+                    </div>
+                    <div className="oc-arrow-col">
+                      <ChevronRight size={24} color="#8c2b2b"/>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
+
+              </div>
+            </div></div>
         </div>
       </div>
     );
   }
-
   return (
     <div className="account-page account-auth-page">
       <div className="container">

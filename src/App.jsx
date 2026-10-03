@@ -12,6 +12,10 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import WishlistPage from './pages/WishlistPage';
 import AccountPage from './pages/AccountPage';
+import MyOrdersPage from './pages/MyOrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+
+
 import MattressPage from './pages/MattressPage';
 import BedsheetPage from "./pages/BedsheetPage";
 import ProtectorPage from "./pages/ProtectorPage";
@@ -101,6 +105,10 @@ function AppInner() {
 
           {/* User Account */}
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/my-orders" element={<MyOrdersPage />} />
+          <Route path="/my-orders/:orderId" element={<OrderDetailPage />} />
+
+
           <Route path="/wishlist" element={<WishlistPage />} />
 
           {/* Static Pages */}

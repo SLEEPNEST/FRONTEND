@@ -85,7 +85,7 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedImg(i)}
                     >
                       {isVideo ? (
-                        <video src={media} style={{width:'100%', height:'100%', objectFit:'cover'}} muted playsInline />
+                        <video src={media} style={{width:'100%', height:'100%', objectFit:'cover',}} muted playsInline />
                       ) : (
                         <img src={media} alt={`View ${i + 1}`} />
                       )}
