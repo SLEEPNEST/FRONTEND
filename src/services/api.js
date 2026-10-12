@@ -101,6 +101,22 @@ export const api = {
   newsletter: {
     subscribe: (email) => request('/newsletter', { method: 'POST', body: { email, source: 'homepage' } }),
   },
+  // Admin-only endpoints (the server rejects non-admin tokens)
+  admin: {
+    stats: () => request('/admin/stats'),
+    orders: (query) => request('/orders', { query }),
+    updateOrder: (id, payload) => request(`/orders/${enc(id)}/status`, { method: 'PATCH', body: payload }),
+    deleteOrder: (id) => request(`/orders/${enc(id)}`, { method: 'DELETE' }),
+    products: (query) => request('/products', { query: { limit: 200, includeInactive: 'true', ...query } }),
+    createProduct: (payload) => request('/products', { method: 'POST', body: payload }),
+    updateProduct: (id, payload) => request(`/products/${enc(id)}`, { method: 'PUT', body: payload }),
+    deleteProduct: (id) => request(`/products/${enc(id)}`, { method: 'DELETE' }),
+    users: (query) => request('/users', { query }),
+    updateUser: (id, payload) => request(`/users/${enc(id)}`, { method: 'PATCH', body: payload }),
+    deleteUser: (id) => request(`/users/${enc(id)}`, { method: 'DELETE' }),
+    subscribers: () => request('/newsletter'),
+    deleteSubscriber: (id) => request(`/newsletter/${enc(id)}`, { method: 'DELETE' }),
+  },
 };
 
 export default api;

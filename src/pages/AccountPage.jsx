@@ -138,6 +138,11 @@ export default function AccountPage() {
                 <Link to="/" className="as-nav-item">
                   <Grid size={18} className="n-icon" /> <span>Browse Categories</span>
                 </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin" className="as-nav-item" style={{ fontWeight: 600 }}>
+                    <ShieldCheck size={18} className="n-icon" /> <span>Admin Panel</span>
+                  </Link>
+                )}
                 <Link to="/stores" className="as-nav-item">
                   <Store size={18} className="n-icon" /> <span>Nearby Stores</span>
                 </Link>

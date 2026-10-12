@@ -206,6 +206,13 @@ export default function Header() {
               </div>
             </div>
 
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="pd-menu-item" onClick={() => setMobileOpen(false)} style={{ margin: '0 0 12px', fontWeight: 600 }}>
+                <Shield size={18} color="#5c38c9"/>
+                <span>Admin Panel</span>
+              </Link>
+            )}
+
             <div className="pd-pills">
               <button className="pd-pill" onClick={() => {navigate('/cart'); setMobileOpen(false);}}>
                 <ShoppingCart size={20} color="#5c38c9"/>
