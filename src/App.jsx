@@ -14,6 +14,7 @@ import WishlistPage from './pages/WishlistPage';
 import AccountPage from './pages/AccountPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import ProfilePage from './pages/ProfilePage';
 
 
 import MattressPage from './pages/MattressPage';
@@ -105,6 +106,7 @@ function AppInner() {
 
           {/* User Account */}
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-orders" element={<MyOrdersPage />} />
           <Route path="/my-orders/:orderId" element={<OrderDetailPage />} />
 

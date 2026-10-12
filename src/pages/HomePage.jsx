@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Star, ArrowRight, Play, Shield, Truck, Award, Leaf, Smile, Wrench, ShieldCheck, TrendingUp } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import NewArrivalsSection from '../components/NewArrivalsSection';
-import { mattresses, bedsheets, protectors, comforters, pillows, testimonials, categories } from '../data/products';
+import { testimonials, categories } from '../data/products';
+import { useApp, useCatalog } from '../context/AppContext';
+import { api } from '../services/api';
 import iciciLogo from '../assets/ICICI Bank Logo - India.jpg';
 import axisLogo from '../assets/Axis Bank Logo.jpg';
 import sbiLogo from '../assets/State Bank of India (SBI).jpg';
@@ -244,6 +246,29 @@ const trustItems = [
 ];
 
 export default function HomePage() {
+  const { showToast } = useApp();
+  const { mattresses, protectors } = useCatalog();
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    const email = newsletterEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    setSubscribing(true);
+    try {
+      const res = await api.newsletter.subscribe(email);
+      showToast(res.message, 'success');
+      setNewsletterEmail('');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSubscribing(false);
+    }
+  };
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(true);
   const [activeBankTab, setActiveBankTab] = useState('Cards');
@@ -607,13 +632,18 @@ export default function HomePage() {
               <h2>Get Exclusive Sleep Deals</h2>
               <p>Subscribe for 10% off your first order + sleep tips from our experts.</p>
             </div>
-            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="newsletter-form" onSubmit={handleSubscribe}>
               <input
                 type="email"
                 placeholder="Enter your email address"
                 className="newsletter-input"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                required
               />
-              <button type="submit" className="btn btn-gold">Subscribe</button>
+              <button type="submit" className="btn btn-gold" disabled={subscribing}>
+                {subscribing ? 'Subscribing...' : 'Subscribe'}
+              </button>
             </form>
           </div>
         </div>

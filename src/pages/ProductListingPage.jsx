@@ -3,7 +3,8 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { SlidersHorizontal, Grid, List, ChevronDown, X, Filter, ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { allProducts, navLinks } from '../data/products';
+import { navLinks } from '../data/products';
+import { useCatalog } from '../context/AppContext';
 import './ProductListingPage.css';
 
 const sortOptions = [
@@ -41,6 +42,8 @@ const filterGroups = [
 export default function ProductListingPage() {
   const { category } = useParams();
   const location = useLocation();
+  const { allProducts } = useCatalog();
+  const searchTerm = (new URLSearchParams(location.search).get('q') || '').trim().toLowerCase();
 
   const [sortBy, setSortBy] = useState('popularity');
   const [viewMode, setViewMode] = useState('grid');
@@ -68,6 +71,13 @@ export default function ProductListingPage() {
       ? allProducts.filter((p) => p.category === currentCat.category)
       : allProducts;
 
+    // Header search (/search?q=...)
+    if (searchTerm) {
+      products = products.filter((p) =>
+        [p.name, p.subcategory, p.category].some((v) => String(v || '').toLowerCase().includes(searchTerm))
+      );
+    }
+
     // Sort
     switch (sortBy) {
       case 'price-asc': products = [...products].sort((a, b) => a.price - b.price); break;
@@ -77,7 +87,7 @@ export default function ProductListingPage() {
       default: break;
     }
     return products;
-  }, [category, sortBy]);
+  }, [category, sortBy, allProducts, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFilter = (key, value) => {
     setActiveFilters((prev) => {

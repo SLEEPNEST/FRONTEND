@@ -1,8 +1,10 @@
 // Account Page
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Package, Heart, MapPin, CreditCard, LogOut, ChevronRight, Eye, EyeOff, Lock, ShoppingCart, Grid, Store, ShieldCheck, Video, Percent, Home, BookOpen, Phone, FileText, MessageCircle, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
+import { formatDate, formatINR, statusPill, orderSummaryText } from '../utils/orderFormat';
 import './AccountPage.css';
 
 const tabs = [
@@ -16,22 +18,81 @@ const accountMenu = [
   { id: 'payments', label: 'Payment Methods', Icon: CreditCard },
 ];
 
+const ORDER_TABS = ['All', 'In Progress', 'Delivered', 'Cancelled'];
+
 export default function AccountPage() {
-  const { user, dispatch } = useApp();
+  const { user, authReady, login, register, logout, defaultAddress, showToast } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('login');
   const [showPass, setShowPass] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ email: '', password: '', name: '', phone: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const handleAuth = (e) => {
+  const [orderTab, setOrderTab] = useState('All');
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
+
+  // Where to go after logging in (e.g. back to checkout)
+  const redirectTo = location.state?.from || new URLSearchParams(location.search).get('redirect');
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setOrdersLoading(true);
+    setOrdersError('');
+    api.orders
+      .my({ status: orderTab === 'All' ? undefined : orderTab.toLowerCase().replace(' ', '-') })
+      .then((res) => { if (!cancelled) setOrders(res.orders); })
+      .catch((err) => { if (!cancelled) setOrdersError(err.message); })
+      .finally(() => { if (!cancelled) setOrdersLoading(false); });
+    return () => { cancelled = true; };
+  }, [user, orderTab]);
+
+  const validate = () => {
+    if (!isLogin && form.name.trim().length < 2) return 'Please enter your full name';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return 'Please enter a valid email address';
+    if (!isLogin && form.phone && !/^(\+?91)?[6-9]\d{9}$/.test(form.phone.replace(/[\s-]/g, ''))) return 'Please enter a valid 10-digit mobile number';
+    if (!isLogin && form.password.length < 6) return 'Password must be at least 6 characters';
+    if (!form.password) return 'Please enter your password';
+    return '';
+  };
+
+  const handleAuth = async (e) => {
     e.preventDefault();
-    const mockUser = { name: form.name || 'Valued Customer', email: form.email, phone: form.phone };
-    dispatch({ type: 'SET_USER', payload: mockUser });
+    const problem = validate();
+    setFormError(problem);
+    if (problem) return;
+
+    setSubmitting(true);
+    try {
+      const loggedIn = isLogin
+        ? await login(form.email.trim(), form.password)
+        : await register({ name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim() || undefined, password: form.password });
+      showToast(isLogin ? `Welcome back${loggedIn.name ? ', ' + loggedIn.name : ''}!` : 'Account created successfully!', 'success');
+      setForm({ email: '', password: '', name: '', phone: '' });
+      if (redirectTo) navigate(redirectTo);
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleLogout = () => {
-    dispatch({ type: 'SET_USER', payload: null });
+    logout();
   };
+
+  if (!authReady && !user) {
+    return (
+      <div className="account-page">
+        <div className="container"><p className="sn-state-msg">Loading your account...</p></div>
+      </div>
+    );
+  }
 
   if (user) {
     return (
@@ -46,13 +107,15 @@ export default function AccountPage() {
                     <User size={24} />
                   </div>
                   <div className="as-details">
-                    <h3 className="as-name">{user.name || 'AKASH AN...'}</h3>
+                    <h3 className="as-name">{user.name || user.phone || 'My Account'}</h3>
                     <Link to="/profile" className="as-profile-link">My Profile</Link>
                   </div>
                 </div>
                 <div className="as-location">
                   <MapPin size={16} />
-                  <span>Tiruvannamalai<br/>632326 <span style={{fontSize:10}}>✏️</span></span>
+                  <Link to="/profile" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {defaultAddress ? (<>{defaultAddress.city}<br/>{defaultAddress.pincode} <span style={{fontSize:10}}>✏️</span></>) : (<>Add address<br/><span style={{fontSize:10}}>✏️</span></>)}
+                  </Link>
                 </div>
               </div>
 
@@ -125,98 +188,62 @@ export default function AccountPage() {
               {/* Filter Row */}
               <div className="orders-filter-row">
                 <div className="orders-tabs">
-                  <button className="orders-tab-pill active">All</button>
-                  <button className="orders-tab-pill">In Progress</button>
-                  <button className="orders-tab-pill">Delivered</button>
-                  <button className="orders-tab-pill">Cancelled</button>
+                  {ORDER_TABS.map((tab) => (
+                    <button
+                      key={tab}
+                      className={`orders-tab-pill ${orderTab === tab ? 'active' : ''}`}
+                      onClick={() => setOrderTab(tab)}
+                    >
+                      {tab}
+                    </button>
+                  ))}
                 </div>
-                <div className="orders-date-select">
-                  <span>Select date range</span> <ChevronDown size={16}/>
-                </div>
+                <Link to="/my-orders" className="orders-date-select" style={{ textDecoration: 'none' }}>
+                  <span>View all orders</span> <ChevronRight size={16}/>
+                </Link>
               </div>
               
               {/* Order List */}
               <div className="orders-list-new">
-                
-                {/* Order 1 */}
-                <div className="order-card-new">
-                  <div className="order-card-top">
-                    <div className="order-status-pill in-progress">
-                      <span className="dot"></span> In progress
-                    </div>
-                    <span className="order-pipe">|</span>
-                    <span className="order-date-new">10 May 2021</span>
+                {ordersLoading && <p className="sn-state-msg">Loading your orders...</p>}
+                {!ordersLoading && ordersError && <p className="sn-state-msg sn-state-error">{ordersError}</p>}
+                {!ordersLoading && !ordersError && orders.length === 0 && (
+                  <div className="sn-state-msg">
+                    <p>No {orderTab === 'All' ? '' : orderTab.toLowerCase() + ' '}orders yet.</p>
+                    <Link to="/" className="btn btn-primary" style={{ marginTop: 12 }}>Start Shopping</Link>
                   </div>
-                  <div className="order-card-main">
-                    <div className="oc-img-col">
-                      <div className="oc-img-wrapper">
-                        <img src="/images/generated/sleepnest_mattress_card.jpg" alt="Mattress" />
-                        <div className="oc-img-overlay">+4</div>
+                )}
+                {!ordersLoading && !ordersError && orders.slice(0, 5).map((order) => {
+                  const pill = statusPill(order.status);
+                  const firstItem = order.items[0];
+                  return (
+                    <Link to={`/my-orders/${order.orderNumber}`} className="order-card-new" key={order.id} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+                      <div className="order-card-top">
+                        <div className={`order-status-pill ${pill.className}`}>
+                          <span className="dot"></span> {pill.label}
+                        </div>
+                        <span className="order-pipe">|</span>
+                        <span className="order-date-new">{formatDate(order.createdAt)}</span>
                       </div>
-                    </div>
-                    <div className="oc-info-col">
-                      <div className="oc-id">Order ID: ABC-6457325</div>
-                      <div className="oc-desc">SleepNest Ortho Mattress | Cloud Pillows | Waterproof Protector & 2 more items</div>
-                      <div className="oc-price">₹ 12,500</div>
-                    </div>
-                    <div className="oc-arrow-col">
-                      <ChevronRight size={24} color="#8c2b2b"/>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order 2 */}
-                <div className="order-card-new">
-                  <div className="order-card-top">
-                    <div className="order-status-pill delivered">
-                      <span className="dot"></span> Delivered
-                    </div>
-                    <span className="order-pipe">|</span>
-                    <span className="order-date-new">10 May 2021</span>
-                  </div>
-                  <div className="order-card-main">
-                    <div className="oc-img-col">
-                      <div className="oc-img-wrapper">
-                        <img src="/images/generated/sleepnest_bedsheet.jpg" alt="Bedsheet" />
+                      <div className="order-card-main">
+                        <div className="oc-img-col">
+                          <div className="oc-img-wrapper">
+                            <img src={firstItem?.image} alt={firstItem?.name || 'Product'} />
+                            {order.items.length > 1 && <div className="oc-img-overlay">+{order.items.length - 1}</div>}
+                          </div>
+                        </div>
+                        <div className="oc-info-col">
+                          <div className="oc-id">Order ID: {order.orderNumber}</div>
+                          <div className="oc-desc">{orderSummaryText(order)}</div>
+                          <div className="oc-price">₹ {formatINR(order.total)}</div>
+                        </div>
+                        <div className="oc-arrow-col">
+                          <ChevronRight size={24} color="#8c2b2b"/>
+                        </div>
                       </div>
-                    </div>
-                    <div className="oc-info-col">
-                      <div className="oc-id">Order ID: ABC-6457325</div>
-                      <div className="oc-desc">Premium Cotton Bedsheet (Queen Size)</div>
-                      <div className="oc-price">₹ 2,499</div>
-                    </div>
-                    <div className="oc-arrow-col">
-                      <ChevronRight size={24} color="#8c2b2b"/>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order 3 */}
-                <div className="order-card-new">
-                  <div className="order-card-top">
-                    <div className="order-status-pill delivered">
-                      <span className="dot"></span> Delivered
-                    </div>
-                    <span className="order-pipe">|</span>
-                    <span className="order-date-new">10 May 2021</span>
-                  </div>
-                  <div className="order-card-main">
-                    <div className="oc-img-col">
-                      <div className="oc-img-wrapper">
-                        <img src="/images/generated/sleepnest_pillow.jpg" alt="Pillow" />
-                      </div>
-                    </div>
-                    <div className="oc-info-col">
-                      <div className="oc-id">Order ID: ABC-6457325</div>
-                      <div className="oc-desc">Memory Foam Contour Pillow</div>
-                      <div className="oc-price">₹ 1,899</div>
-                    </div>
-                    <div className="oc-arrow-col">
-                      <ChevronRight size={24} color="#8c2b2b"/>
-                    </div>
-                  </div>
-                </div>
-
+                    </Link>
+                  );
+                })}
               </div>
             </div></div>
         </div>
@@ -248,8 +275,8 @@ export default function AccountPage() {
           {/* Right: Form */}
           <div className="auth-form-card">
             <div className="auth-tabs">
-              <button className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => setIsLogin(true)}>Login</button>
-              <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => setIsLogin(false)}>Register</button>
+              <button className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(true); setFormError(''); }}>Login</button>
+              <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => { setIsLogin(false); setFormError(''); }}>Register</button>
             </div>
 
             <form onSubmit={handleAuth} className="auth-form">
@@ -313,23 +340,25 @@ export default function AccountPage() {
                   </button>
                 </div>
                 {isLogin && (
-                  <button type="button" style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+                  <button type="button" onClick={() => showToast('Use "OTP" below to log in with your mobile number, then set a new password from My Profile.', 'info')} style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
                     Forgot password?
                   </button>
                 )}
               </div>
 
-              <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}>
-                {isLogin ? 'Login' : 'Create Account'}
+              {formError && <p className="sn-form-error" role="alert">{formError}</p>}
+
+              <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} disabled={submitting}>
+                {submitting ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
               </button>
 
               <div className="auth-divider"><span>or continue with</span></div>
 
               <div className="auth-social">
-                <button type="button" className="auth-social-btn">
+                <button type="button" className="auth-social-btn" onClick={() => showToast('Google sign-in is not set up yet. Please use email or OTP.', 'info')}>
                   <span>🇬</span> Google
                 </button>
-                <button type="button" className="auth-social-btn">
+                <button type="button" className="auth-social-btn" onClick={() => navigate('/cart', { state: { openLogin: true, from: redirectTo || '/account' } })}>
                   <span>📱</span> OTP
                 </button>
               </div>

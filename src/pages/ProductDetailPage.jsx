@@ -5,8 +5,7 @@ import {
   ChevronRight, ChevronLeft, Check, Minus, Plus, Share2,
   ArrowRight, ThumbsUp, MapPin, Search, Maximize, Play, PlayCircle, X, ChevronDown, CheckCircle2, XCircle, MessageCircle
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { allProducts } from '../data/products';
+import { useApp, useCatalog } from '../context/AppContext';
 import ProductCard from '../components/ProductCard';
 import './ProductDetailPage.css';
 
@@ -15,6 +14,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart, toggleWishlist, isInWishlist, showToast } = useApp();
 
+  const { allProducts, productsLoaded } = useCatalog();
   const product = allProducts.find((p) => p.id === id);
   const [selectedSize, setSelectedSize] = useState(product?.sizes?.[0] || 'Single | 72" x 30" x 5"');
   const [selectedImg, setSelectedImg] = useState(0);
@@ -29,6 +29,14 @@ export default function ProductDetailPage() {
   const [tempThickness, setTempThickness] = useState('5');
   const [showFbtDrawer, setShowFbtDrawer] = useState(false);
 
+  if (!product && !productsLoaded) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-500)' }}>
+        Loading product...
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: 40 }}>
@@ -40,9 +48,9 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = () => {
-    for (let i = 0; i < qty; i++) addToCart(product, selectedSize);
-    showToast('Added to cart!');
-    setShowFbtDrawer(true);
+    addToCart(product, selectedSize, qty).then((ok) => {
+      if (ok) setShowFbtDrawer(true);
+    });
   };
 
   const seriesData = [

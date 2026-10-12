@@ -1,8 +1,9 @@
 // Checkout / Payment Page
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, CreditCard, Smartphone, Building2, Banknote, Shield, ChevronRight, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
 import logoImg from '../assets/logo.png';
 import './CheckoutPage.css';
 
@@ -17,12 +18,15 @@ const paymentMethods = [
 ];
 
 export default function CheckoutPage() {
-  const { cart, cartTotal, clearCart } = useApp();
+  const { cart, cartTotal, user, authReady, defaultAddress, refreshCart, refreshAddresses, showToast } = useApp();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('upi');
-  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(null); // the created order
   const [loading, setLoading] = useState(false);
+  const [addressErrors, setAddressErrors] = useState({});
+  // When the form was filled from a saved address and left unchanged, the order uses that address id
+  const [prefill, setPrefill] = useState(null); // { id, snapshot }
 
   const [address, setAddress] = useState({
     name: '',
@@ -33,17 +37,82 @@ export default function CheckoutPage() {
     state: '',
   });
 
+  // Pre-fill the delivery form with the saved default address (only while the form is still empty)
+  useEffect(() => {
+    if (!defaultAddress) return;
+    setAddress((current) => {
+      if (Object.values(current).some(Boolean)) return current;
+      const street = [defaultAddress.flatNo, defaultAddress.floor && `Floor ${defaultAddress.floor}`, defaultAddress.building, defaultAddress.address, defaultAddress.landmark]
+        .filter(Boolean)
+        .join(', ');
+      const filled = {
+        name: defaultAddress.name || '',
+        phone: defaultAddress.phone || '',
+        pincode: defaultAddress.pincode || '',
+        address: street,
+        city: defaultAddress.city || '',
+        state: defaultAddress.state || '',
+      };
+      setPrefill({ id: defaultAddress.id, snapshot: JSON.stringify(filled) });
+      return filled;
+    });
+  }, [defaultAddress]);
+
   const discount = Math.round(cartTotal * 0.05);
   const gst = Math.round((cartTotal - discount) * 0.18);
   const finalTotal = cartTotal - discount + gst;
 
-  const handlePlaceOrder = () => {
+  const validateAddress = () => {
+    const errors = {};
+    if (address.name.trim().length < 2) errors.name = 'Please enter your full name';
+    if (!/^[6-9]\d{9}$/.test(address.phone.replace(/\D/g, '').slice(-10))) errors.phone = 'Enter a valid 10-digit mobile number';
+    if (address.address.trim().length < 3) errors.address = 'Please enter your address';
+    if (!/^\d{6}$/.test(address.pincode.trim())) errors.pincode = 'Enter a 6-digit pincode';
+    if (!address.city.trim()) errors.city = 'Please enter your city';
+    if (!address.state) errors.state = 'Please select your state';
+    setAddressErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleContinueToPayment = () => {
+    if (validateAddress()) setStep(1);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      showToast('Please log in to place your order', 'info');
+      navigate('/account', { state: { from: '/checkout' } });
+      return;
+    }
+    if (!cart.length) {
+      showToast('Your cart is empty', 'error');
+      return;
+    }
+    if (!validateAddress()) {
+      setStep(0);
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const unchangedSaved = prefill && prefill.snapshot === JSON.stringify(address);
+      const { order } = await api.orders.create(
+        unchangedSaved
+          ? { paymentMethod, addressId: prefill.id }
+          : {
+              paymentMethod,
+              shippingAddress: { ...address, phone: address.phone.replace(/\D/g, '').slice(-10) },
+              saveAddress: true,
+            }
+      );
+      setOrderPlaced(order);
+      showToast('Order placed successfully!', 'success');
+      // The backend empties the saved cart once the order is created
+      await Promise.all([refreshCart(), refreshAddresses()]).catch(() => {});
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
       setLoading(false);
-      setOrderPlaced(true);
-      clearCart();
-    }, 2000);
+    }
   };
 
   if (orderPlaced) {
@@ -57,7 +126,7 @@ export default function CheckoutPage() {
             <h1>Order Placed Successfully!</h1>
             <p>Your order has been confirmed. You will receive a confirmation email and SMS shortly.</p>
             <div className="order-id">
-              <strong>Order ID:</strong> #SN{Math.floor(Math.random() * 9000000) + 1000000}
+              <strong>Order ID:</strong> #{orderPlaced.orderNumber}
             </div>
             <div className="order-success-steps">
               {[
@@ -77,7 +146,7 @@ export default function CheckoutPage() {
             </div>
             <div className="success-ctas">
               <Link to="/" className="btn btn-primary btn-lg">Continue Shopping</Link>
-              <Link to="/account" className="btn btn-outline">Track Order</Link>
+              <Link to={`/my-orders/${orderPlaced.orderNumber}`} className="btn btn-outline">Track Order</Link>
             </div>
           </div>
         </div>
@@ -116,10 +185,12 @@ export default function CheckoutPage() {
                 <h2 className="checkout-section-title">Delivery Address</h2>
 
                 {/* Login CTA */}
+                {authReady && !user && (
                 <div className="checkout-login-cta">
                   <span>Already have an account?</span>
-                  <Link to="/account" className="login-link">Login for faster checkout</Link>
+                  <Link to="/account" state={{ from: '/checkout' }} className="login-link">Login for faster checkout</Link>
                 </div>
+                )}
 
                 <div className="checkout-form">
                   <div className="form-row-2">
@@ -132,6 +203,7 @@ export default function CheckoutPage() {
                         value={address.name}
                         onChange={(e) => setAddress({ ...address, name: e.target.value })}
                       />
+                      {addressErrors.name && <span className="sn-field-error">{addressErrors.name}</span>}
                     </div>
                     <div className="form-group">
                       <label className="form-label">Mobile Number *</label>
@@ -142,6 +214,7 @@ export default function CheckoutPage() {
                         value={address.phone}
                         onChange={(e) => setAddress({ ...address, phone: e.target.value })}
                       />
+                      {addressErrors.phone && <span className="sn-field-error">{addressErrors.phone}</span>}
                     </div>
                   </div>
                   <div className="form-group">
@@ -154,6 +227,7 @@ export default function CheckoutPage() {
                       onChange={(e) => setAddress({ ...address, address: e.target.value })}
                       style={{ resize: 'vertical' }}
                     />
+                    {addressErrors.address && <span className="sn-field-error">{addressErrors.address}</span>}
                   </div>
                   <div className="form-row-3">
                     <div className="form-group">
@@ -163,9 +237,10 @@ export default function CheckoutPage() {
                         className="form-input"
                         placeholder="6-digit pincode"
                         value={address.pincode}
-                        onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+                        onChange={(e) => setAddress({ ...address, pincode: e.target.value.replace(/\D/g, '') })}
                         maxLength={6}
                       />
+                      {addressErrors.pincode && <span className="sn-field-error">{addressErrors.pincode}</span>}
                     </div>
                     <div className="form-group">
                       <label className="form-label">City *</label>
@@ -176,6 +251,7 @@ export default function CheckoutPage() {
                         value={address.city}
                         onChange={(e) => setAddress({ ...address, city: e.target.value })}
                       />
+                      {addressErrors.city && <span className="sn-field-error">{addressErrors.city}</span>}
                     </div>
                     <div className="form-group">
                       <label className="form-label">State *</label>
@@ -185,10 +261,11 @@ export default function CheckoutPage() {
                         onChange={(e) => setAddress({ ...address, state: e.target.value })}
                       >
                         <option value="">Select State</option>
-                        {['Karnataka','Maharashtra','Tamil Nadu','Delhi','Gujarat','Rajasthan','Telangana','Kerala','West Bengal','Uttar Pradesh'].map(s => (
+                        {[...new Set(['Karnataka','Maharashtra','Tamil Nadu','Delhi','Gujarat','Rajasthan','Telangana','Kerala','West Bengal','Uttar Pradesh', ...(address.state ? [address.state] : [])])].map(s => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
+                      {addressErrors.state && <span className="sn-field-error">{addressErrors.state}</span>}
                     </div>
                   </div>
                 </div>
@@ -196,7 +273,7 @@ export default function CheckoutPage() {
                 <button
                   className="btn btn-primary btn-lg"
                   style={{ marginTop: 8 }}
-                  onClick={() => setStep(1)}
+                  onClick={handleContinueToPayment}
                   disabled={!address.name || !address.phone || !address.pincode}
                 >
                   Continue to Payment <ChevronRight size={18} />
@@ -335,6 +412,8 @@ export default function CheckoutPage() {
                   >
                     {loading ? (
                       <span className="loading-spinner">Processing...</span>
+                    ) : !user ? (
+                      <>Login to Place Order</>
                     ) : (
                       <>Place Order · ₹{finalTotal.toLocaleString()}</>
                     )}

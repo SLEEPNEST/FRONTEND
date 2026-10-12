@@ -11,7 +11,7 @@ import logoImg from '../assets/logo.png';
 import './Header.css';
 
 export default function Header() {
-  const { cartCount, wishlist, searchQuery, selectedCity, dispatch, showToast } = useApp();
+  const { cartCount, wishlist, searchQuery, selectedCity, dispatch, showToast, user, defaultAddress, logout } = useApp();
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -193,15 +193,15 @@ export default function Header() {
               <div className="pd-user">
                 <div className="pd-avatar"><User size={20}/></div>
                 <div className="pd-user-info">
-                  <strong>AKASH AN...</strong>
-                  <a href="#" className="pd-my-profile">My Profile</a>
+                  <strong>{user ? (user.name || user.phone || 'My Account') : 'Welcome, Guest'}</strong>
+                  <Link to={user ? '/profile' : '/account'} className="pd-my-profile" onClick={() => setMobileOpen(false)}>{user ? 'My Profile' : 'Login / Register'}</Link>
                 </div>
               </div>
               <div className="pd-location">
                 <div className="pd-loc-pin"><MapPin size={16}/></div>
                 <div className="pd-loc-info">
-                  <span>Tiruvannamalai</span>
-                  <strong>632326 <span className="pd-edit-icon">✎</span></strong>
+                  <span>{defaultAddress ? defaultAddress.city : selectedCity}</span>
+                  <strong>{defaultAddress ? defaultAddress.pincode : 'Add address'} <span className="pd-edit-icon" onClick={() => { navigate(user ? '/profile' : '/account'); setMobileOpen(false); }}>✎</span></strong>
                 </div>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function Header() {
             </div>
 
             <div className="pd-footer">
-              <button className="pd-logout-btn" onClick={() => setMobileOpen(false)}>Logout</button>
+              <button className="pd-logout-btn" onClick={() => { setMobileOpen(false); if (user) logout(); else navigate('/account'); }}>{user ? 'Logout' : 'Login'}</button>
             </div>
           </div>
         </div>

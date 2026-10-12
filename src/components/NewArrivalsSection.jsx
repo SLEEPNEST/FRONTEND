@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, useCatalog } from '../context/AppContext';
 import NewArrivalCard from './NewArrivalCard';
 import './NewArrivalsSection.css';
 
-import { mattresses } from '../data/products';
 
 export default function NewArrivalsSection() {
   const { addToCart } = useApp();
+  const { mattresses } = useCatalog();
 
   const handleAddToCart = (product, e) => {
     e.preventDefault();
@@ -20,8 +20,8 @@ export default function NewArrivalsSection() {
   const formattedProducts = mattresses.slice(0, 3).map(p => ({
     ...p,
     image: p.images.length > 1 ? p.images[1] : p.images[0],
-    feature1: p.features[0],
-    feature2: p.features[1],
+    feature1: p.features?.[0],
+    feature2: p.features?.[1],
     discount: parseInt(p.discount)
   }));
 

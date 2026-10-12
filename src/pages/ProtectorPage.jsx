@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings2, Grid, List, Tag, X } from 'lucide-react';
-import { protectors } from '../data/products';
-import { useApp } from '../context/AppContext';
+import { useApp, useCatalog } from '../context/AppContext';
 import './MattressPage.css';
 
 export default function ProtectorPage() {
   const { addToCart, showToast } = useApp();
+  const { protectors } = useCatalog();
   const [showFilter, setShowFilter] = useState(false);
 
   const handleAddToCart = (product, e) => {
     e.preventDefault();
-    addToCart(product, 'Queen', 1);
-    if(showToast) showToast(`Added ${product.name} to cart!`);
+    addToCart(product, 'Queen', 1).then((ok) => {
+      if (ok && showToast) showToast(`Added ${product.name} to cart!`);
+    });
   };
 
   return (
